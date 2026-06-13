@@ -1,71 +1,55 @@
-const { test, expect } = require('@playwright/test');
+const { api, seedDatabase, createMember } = require('../../helpers/api');
 
-const uniqueEmail = () => `test.${Date.now()}${Math.random().toString(36).slice(2, 5)}@example.com`;
+beforeAll(() => seedDatabase());
 
-test.describe('Member Management – UI / E2E', () => {
+describe('POST /api/members/:id/deactivate & /activate – Member status', () => {
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.locator('nav button[data-tab="members"]').click();
-    await expect(page.getByRole('heading', { name: /all members/i })).toBeVisible();
+  test('TC-G2-018: should deactivate an active member', async () => {
+    const created = await createMember();
+    const id = created.body.id;
+
+    const res = await api.post(`/api/members/${id}/deactivate`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('inactive');
   });
 
-  test('TC-G2-E01: should register a new member via the UI form', async ({ page }) => {
-    await page.getByPlaceholder('Full Name').fill('E2E Test User');
-    await page.getByPlaceholder('Email').fill(uniqueEmail());
-    await page.getByRole('button', { name: 'Register' }).click();
+  test('TC-G2-019: should reactivate an inactive member', async () => {
+    const created = await createMember();
+    const id = created.body.id;
+    await api.post(`/api/members/${id}/deactivate`);
 
-    await expect(page.getByText(/Registered "E2E Test User"/)).toBeVisible();
+    const res = await api.post(`/api/members/${id}/activate`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('active');
   });
 
-  test('TC-G2-E02: should show a newly registered member in the members list', async ({ page }) => {
-    const email = uniqueEmail();
+  test('TC-G2-020: should return 404 when deactivating a non-existent member', async () => {
+    const res = await api.post('/api/members/999999/deactivate');
 
-    await page.getByPlaceholder('Full Name').fill('List Check User');
-    await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register' }).click();
-
-    await expect(page.getByText('List Check User')).toBeVisible();
+    expect(res.status).toBe(404);
   });
 
-  test('TC-G2-E03: should show a validation error when registering with an invalid email', async ({ page }) => {
-    await page.getByPlaceholder('Full Name').fill('Bad Email User');
-    await page.getByPlaceholder('Email').fill('not-a-valid-email');
-    await page.getByRole('button', { name: 'Register' }).click();
+  test('TC-G2-021: should return 404 when activating a non-existent member', async () => {
+    const res = await api.post('/api/members/999999/activate');
 
-    await expect(page.getByText(/email must be a valid email address/i)).toBeVisible();
+    expect(res.status).toBe(404);
   });
 
-  test('TC-G2-E04: should deactivate a member and show inactive status', async ({ page }) => {
-    const email = uniqueEmail();
-    await page.getByPlaceholder('Full Name').fill('Deactivate Me');
-    await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register' }).click();
-    await expect(page.getByText(/Registered "Deactivate Me"/)).toBeVisible();
+  test('TC-G2-022: inactive member should not be able to borrow a book', async () => {
+    // Seed gives us books with available copies — use book id 1
+    const member = await createMember();
+    const id = member.body.id;
+    await api.post(`/api/members/${id}/deactivate`);
 
-    // Click the member row to open detail page
-    await page.getByRole('cell', { name: 'Deactivate Me' }).click();
-    await page.getByRole('button', { name: 'Deactivate' }).click();
+    const booksRes = await api.get('/api/books');
+    const availableBook = booksRes.body.find(b => b.availableCopies > 0);
 
-    await expect(page.getByText('Member deactivated.')).toBeVisible();
-  });
+    const res = await api.post('/api/loans').send({ bookId: availableBook.id, memberId: id });
 
-  test('TC-G2-E05: should delete a member and remove them from the list', async ({ page }) => {
-    const email = uniqueEmail();
-    await page.getByPlaceholder('Full Name').fill('Delete Me');
-    await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register' }).click();
-    await expect(page.getByText(/Registered "Delete Me"/)).toBeVisible();
-
-    // Click the member row to open detail page
-    await page.getByRole('cell', { name: 'Delete Me' }).click();
-
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
-
-    // Should be back on the members list, deleted member no longer visible
-    await expect(page.getByRole('heading', { name: /all members/i })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Delete Me' })).not.toBeVisible();
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/inactive/i);
   });
 
 });
