@@ -50,15 +50,6 @@ jobs:
           SUT_DIR: ${{ github.workspace }}/sut
         run: npm run test:api
 
-      - name: Debug — where did the API report go?
-        if: always()
-        run: |
-          echo "=== api step outcome: ${{ steps.api.outcome }} ==="
-          echo "=== cwd ==="; pwd
-          echo "=== test-results/ ==="; ls -la test-results/ 2>/dev/null || echo "(no test-results dir)"
-          echo "=== junit.xml found anywhere in repo ==="
-          find . -name 'junit.xml' -not -path './node_modules/*' -not -path './sut/*' || true
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
