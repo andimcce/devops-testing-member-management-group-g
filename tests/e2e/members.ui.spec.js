@@ -11,9 +11,9 @@ test.describe('Member Management – UI / E2E', () => {
   });
 
   test('TC-G2-E01: should register a new member via the UI form', async ({ page }) => {
-    await page.getByPlaceholder('Name').fill('E2E Test User');
+    await page.getByPlaceholder('Full Name').fill('E2E Test User');
     await page.getByPlaceholder('Email').fill(uniqueEmail());
-    await page.getByRole('button', { name: 'Register Member' }).click();
+    await page.getByRole('button', { name: 'Register' }).click();
 
     await expect(page.getByText(/Registered "E2E Test User"/)).toBeVisible();
   });
@@ -21,27 +21,26 @@ test.describe('Member Management – UI / E2E', () => {
   test('TC-G2-E02: should show a newly registered member in the members list', async ({ page }) => {
     const email = uniqueEmail();
 
-    await page.getByPlaceholder('Name').fill('List Check User');
+    await page.getByPlaceholder('Full Name').fill('List Check User');
     await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register Member' }).click();
+    await page.getByRole('button', { name: 'Register' }).click();
 
     await expect(page.getByText('List Check User')).toBeVisible();
   });
 
   test('TC-G2-E03: should show a validation error when registering with an invalid email', async ({ page }) => {
-    await page.getByPlaceholder('Name').fill('Bad Email User');
+    await page.getByPlaceholder('Full Name').fill('Bad Email User');
     await page.getByPlaceholder('Email').fill('not-a-valid-email');
-    await page.getByRole('button', { name: 'Register Member' }).click();
+    await page.getByRole('button', { name: 'Register' }).click();
 
     await expect(page.getByText(/email must be a valid email address/i)).toBeVisible();
   });
 
   test('TC-G2-E04: should deactivate a member and show inactive status', async ({ page }) => {
-    // Register a fresh member
     const email = uniqueEmail();
-    await page.getByPlaceholder('Name').fill('Deactivate Me');
+    await page.getByPlaceholder('Full Name').fill('Deactivate Me');
     await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register Member' }).click();
+    await page.getByRole('button', { name: 'Register' }).click();
     await expect(page.getByText(/Registered "Deactivate Me"/)).toBeVisible();
 
     // Click the member row to open detail page
@@ -52,11 +51,10 @@ test.describe('Member Management – UI / E2E', () => {
   });
 
   test('TC-G2-E05: should delete a member and remove them from the list', async ({ page }) => {
-    // Register a fresh member
     const email = uniqueEmail();
-    await page.getByPlaceholder('Name').fill('Delete Me');
+    await page.getByPlaceholder('Full Name').fill('Delete Me');
     await page.getByPlaceholder('Email').fill(email);
-    await page.getByRole('button', { name: 'Register Member' }).click();
+    await page.getByRole('button', { name: 'Register' }).click();
     await expect(page.getByText(/Registered "Delete Me"/)).toBeVisible();
 
     // Click the member row to open detail page
@@ -65,7 +63,8 @@ test.describe('Member Management – UI / E2E', () => {
     page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Delete' }).click();
 
-    await expect(page.locator('nav button[data-tab="members"]')).toBeVisible();
+    // Should be back on the members list, deleted member no longer visible
+    await expect(page.getByRole('heading', { name: /all members/i })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Delete Me' })).not.toBeVisible();
   });
 
