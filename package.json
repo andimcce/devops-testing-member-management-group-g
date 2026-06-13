@@ -1,0 +1,32 @@
+{
+  "name": "fhb-mcce-g2-member-management-tests",
+  "version": "1.0.0",
+  "description": "Group 2 – Member Management test suite for FHB MCCE DevOps Testing Assignment",
+  "scripts": {
+    "test": "jest --runInBand --forceExit",
+    "test:api": "jest tests/api --runInBand --forceExit",
+    "test:e2e": "npx playwright test",
+    "test:report": "jest --runInBand --forceExit --reporters=default --reporters=jest-junit"
+  },
+  "dependencies": {
+    "supertest": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "jest": "^29.7.0",
+    "jest-junit": "^16.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/api/**/*.test.js"
+    ],
+    "reporters": [
+      "default",
+      ["jest-junit", {
+        "outputDirectory": "test-results",
+        "outputName": "junit.xml"
+      }]
+    ]
+  }
+}
