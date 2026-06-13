@@ -115,3 +115,61 @@ The pipeline exits with a non-zero code if any test fails, which marks the run a
 ---
 
 ## Repository Structure
+.
+
+├── .github/
+
+│   └── workflows/
+
+│       └── ci.yml                    # GitHub Actions pipeline
+
+├── helpers/
+
+│   └── api.js                        # Shared supertest instance & seed helper
+
+├── tests/
+
+│   ├── api/
+
+│   │   ├── members.register.test.js  # TC-G2-001 to TC-G2-008
+
+│   │   ├── members.get.test.js       # TC-G2-009 to TC-G2-012
+
+│   │   ├── members.update.test.js    # TC-G2-013 to TC-G2-017
+
+│   │   ├── members.status.test.js    # TC-G2-018 to TC-G2-022
+
+│   │   └── members.delete.test.js    # TC-G2-023 to TC-G2-026
+
+│   └── e2e/
+
+│       └── members.ui.spec.js        # TC-G2-E01 to TC-G2-E05
+
+├── playwright.config.js
+
+├── package.json
+
+└── README.md
+
+---
+
+## Test Coverage Summary
+
+| ID Range | File | Area | Tests |
+|---|---|---|---|
+| TC-G2-001 – 008 | members.register.test.js | Registration | 8 |
+| TC-G2-009 – 012 | members.get.test.js | Retrieval | 4 |
+| TC-G2-013 – 017 | members.update.test.js | Updates | 5 |
+| TC-G2-018 – 022 | members.status.test.js | Deactivate/Activate | 5 |
+| TC-G2-023 – 026 | members.delete.test.js | Deletion | 4 |
+| TC-G2-E01 – E05 | members.ui.spec.js | UI / E2E | 5 |
+| **Total** | | | **31** |
+
+---
+
+## CI/CD
+
+Tests run automatically on every push to `main` via **GitHub Actions**.  
+The pipeline clones the SUT, seeds the database, runs all tests, and publishes JUnit XML and Playwright HTML reports as artifacts.
+
+See `.github/workflows/ci.yml` for the full pipeline definition.
