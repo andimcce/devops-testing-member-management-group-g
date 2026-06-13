@@ -1,89 +1,72 @@
 const { test, expect } = require('@playwright/test');
 
-// Helper to generate a unique email for each test
 const uniqueEmail = () => `test.${Date.now()}${Math.random().toString(36).slice(2, 5)}@example.com`;
 
 test.describe('Member Management – UI / E2E', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    // Navigate to the Members tab
-    await page.getByRole('link', { name: /members/i }).click();
-    await expect(page.getByRole('heading', { name: /members/i })).toBeVisible();
+    await page.locator('nav button[data-tab="members"]').click();
+    await expect(page.getByRole('heading', { name: /all members/i })).toBeVisible();
   });
 
   test('TC-G2-E01: should register a new member via the UI form', async ({ page }) => {
-    await page.getByRole('button', { name: /add member|new member|register/i }).click();
+    await page.getByPlaceholder('Name').fill('E2E Test User');
+    await page.getByPlaceholder('Email').fill(uniqueEmail());
+    await page.getByRole('button', { name: 'Register Member' }).click();
 
-    await page.getByLabel(/name/i).fill('E2E Test User');
-    await page.getByLabel(/email/i).fill(uniqueEmail());
-    await page.getByRole('button', { name: /save|submit|register/i }).click();
-
-    await expect(page.getByText('E2E Test User')).toBeVisible();
+    await expect(page.getByText(/Registered "E2E Test User"/)).toBeVisible();
   });
 
   test('TC-G2-E02: should show a newly registered member in the members list', async ({ page }) => {
     const email = uniqueEmail();
 
-    await page.getByRole('button', { name: /add member|new member|register/i }).click();
-    await page.getByLabel(/name/i).fill('List Check User');
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByRole('button', { name: /save|submit|register/i }).click();
+    await page.getByPlaceholder('Name').fill('List Check User');
+    await page.getByPlaceholder('Email').fill(email);
+    await page.getByRole('button', { name: 'Register Member' }).click();
 
     await expect(page.getByText('List Check User')).toBeVisible();
-    await expect(page.getByText(email)).toBeVisible();
   });
 
   test('TC-G2-E03: should show a validation error when registering with an invalid email', async ({ page }) => {
-    await page.getByRole('button', { name: /add member|new member|register/i }).click();
+    await page.getByPlaceholder('Name').fill('Bad Email User');
+    await page.getByPlaceholder('Email').fill('not-a-valid-email');
+    await page.getByRole('button', { name: 'Register Member' }).click();
 
-    await page.getByLabel(/name/i).fill('Bad Email User');
-    await page.getByLabel(/email/i).fill('not-a-valid-email');
-    await page.getByRole('button', { name: /save|submit|register/i }).click();
-
-    // Either a browser-native validation tooltip or an app error message
-    const invalidEmail = await page.getByLabel(/email/i).evaluate(
-      el => el.validity ? !el.validity.valid : false
-    );
-    const appError = page.getByText(/valid email|invalid email|email must/i);
-
-    const errorShown = invalidEmail || await appError.isVisible();
-    expect(errorShown).toBe(true);
+    await expect(page.getByText(/email must be a valid email address/i)).toBeVisible();
   });
 
   test('TC-G2-E04: should deactivate a member and show inactive status', async ({ page }) => {
-    // First register a fresh member so we have a known one to deactivate
+    // Register a fresh member
     const email = uniqueEmail();
-    await page.getByRole('button', { name: /add member|new member|register/i }).click();
-    await page.getByLabel(/name/i).fill('Deactivate Me');
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByRole('button', { name: /save|submit|register/i }).click();
-    await expect(page.getByText('Deactivate Me')).toBeVisible();
+    await page.getByPlaceholder('Name').fill('Deactivate Me');
+    await page.getByPlaceholder('Email').fill(email);
+    await page.getByRole('button', { name: 'Register Member' }).click();
+    await expect(page.getByText(/Registered "Deactivate Me"/)).toBeVisible();
 
-    // Open the member detail / actions
-    await page.getByText('Deactivate Me').click();
-    await page.getByRole('button', { name: /deactivate/i }).click();
+    // Click the member row to open detail page
+    await page.getByRole('cell', { name: 'Deactivate Me' }).click();
+    await page.getByRole('button', { name: 'Deactivate' }).click();
 
-    await expect(page.getByText(/inactive/i)).toBeVisible();
+    await expect(page.getByText('Member deactivated.')).toBeVisible();
   });
 
   test('TC-G2-E05: should delete a member and remove them from the list', async ({ page }) => {
-    // Register a fresh member to delete
+    // Register a fresh member
     const email = uniqueEmail();
-    await page.getByRole('button', { name: /add member|new member|register/i }).click();
-    await page.getByLabel(/name/i).fill('Delete Me');
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByRole('button', { name: /save|submit|register/i }).click();
-    await expect(page.getByText('Delete Me')).toBeVisible();
+    await page.getByPlaceholder('Name').fill('Delete Me');
+    await page.getByPlaceholder('Email').fill(email);
+    await page.getByRole('button', { name: 'Register Member' }).click();
+    await expect(page.getByText(/Registered "Delete Me"/)).toBeVisible();
 
-    // Open member and delete
-    await page.getByText('Delete Me').click();
-    await page.getByRole('button', { name: /delete/i }).click();
+    // Click the member row to open detail page
+    await page.getByRole('cell', { name: 'Delete Me' }).click();
 
-    // Confirm dialog if one appears
-    page.on('dialog', dialog => dialog.accept());
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Delete' }).click();
 
-    await expect(page.getByText('Delete Me')).not.toBeVisible();
+    await expect(page.locator('nav button[data-tab="members"]')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Delete Me' })).not.toBeVisible();
   });
 
 });

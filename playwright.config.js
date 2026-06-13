@@ -13,6 +13,6 @@ module.exports = defineConfig({
   reporter: [
     ['list'],
     ['junit', { outputFile: 'test-results/e2e-junit.xml' }],
-    ['html', { outputFolder: 'test-results/playwright-report', open: 'never' }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
   ],
 });
