@@ -1,0 +1,64 @@
+name: Member Management Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout test repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clone System Under Test
+        run: git clone https://github.com/horvathkevin/FHB-MCCE-Library-Management-System-Student.git sut
+
+      - name: Install SUT dependencies
+        run: npm install
+        working-directory: sut
+
+      - name: Seed the database
+        run: npm run seed
+        working-directory: sut
+
+      - name: Start SUT in background
+        run: npm start &
+        working-directory: sut
+
+      - name: Wait for SUT to be ready
+        run: npx wait-on http://localhost:3000 --timeout 15000
+
+      - name: Install test dependencies
+        run: npm install
+
+      - name: Run API tests (Jest)
+        env:
+          SUT_DIR: ${{ github.workspace }}/sut
+        run: npm run test:api
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests (Playwright)
+        env:
+          SUT_URL: http://localhost:3000
+        run: npm run test:e2e
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results/junit.xml
+            test-results/e2e-junit.xml
+            test-results/playwright-report/
