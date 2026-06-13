@@ -40,13 +40,22 @@ jobs:
       - name: Install test dependencies
         run: npm install
 
+      - name: Create test results directory
+        run: mkdir -p test-results
+
       - name: Run API tests (Jest)
+        id: api
+        continue-on-error: true
+        env:
+          SUT_DIR: ${{ github.workspace }}/sut
         run: npm run test:api
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests (Playwright)
+        id: e2e
+        continue-on-error: true
         env:
           SUT_URL: http://localhost:3000
         run: npm run test:e2e
@@ -56,7 +65,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
+          if-no-files-found: error
           path: |
             test-results/junit.xml
             test-results/e2e-junit.xml
             playwright-report/
+
+      # Reinstate failure: the job must go red if any test failed.
+      - name: Fail if any tests failed
+        if: steps.api.outcome == 'failure' || steps.e2e.outcome == 'failure'
+        run: |
+          echo "API tests outcome:  ${{ steps.api.outcome }}"
+          echo "E2E tests outcome:  ${{ steps.e2e.outcome }}"
+          exit 1
