@@ -40,14 +40,7 @@ jobs:
       - name: Install test dependencies
         run: npm install
 
-      - name: Create test results directory
-        run: mkdir -p test-results
-
       - name: Run API tests (Jest)
-        env:
-          SUT_DIR: ${{ github.workspace }}/sut
-          JEST_JUNIT_OUTPUT_DIR: test-results
-          JEST_JUNIT_OUTPUT_NAME: junit.xml
         run: npm run test:api
 
       - name: Install Playwright browsers
