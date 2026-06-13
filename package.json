@@ -4,7 +4,7 @@
   "description": "Group 2 – Member Management test suite for FHB MCCE DevOps Testing Assignment",
   "scripts": {
     "test": "jest --runInBand --forceExit",
-    "test:api": "jest tests/api --runInBand --forceExit",
+    "test:api": "jest tests/api --runInBand --forceExit --reporters=default --reporters=jest-junit",
     "test:e2e": "npx playwright test",
     "test:report": "jest --runInBand --forceExit --reporters=default --reporters=jest-junit"
   },
