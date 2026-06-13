@@ -25,7 +25,7 @@ test.describe('Member Management – UI / E2E', () => {
     await page.getByPlaceholder('Email').fill(email);
     await page.getByRole('button', { name: 'Register' }).click();
 
-    await expect(page.getByText('List Check User')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'List Check User' })).toBeVisible();
   });
 
   test('TC-G2-E03: should show a validation error when registering with an invalid email', async ({ page }) => {
